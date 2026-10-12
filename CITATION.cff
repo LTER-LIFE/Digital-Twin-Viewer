@@ -25,7 +25,7 @@ version: 1.0.0
 date-released: 2026-10-12
 identifiers:
   - type: doi
-    value: 10.5281/zenodo.NNNNNNN
+    value: 10.5281/zenodo.23313342
 license: Apache-2.0
 keywords:
   - digital twin

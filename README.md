@@ -9,7 +9,7 @@
 ![JavaScript ES modules](https://img.shields.io/badge/JavaScript-ES_modules,_no_build_step-F7DF1E?logo=javascript&logoColor=black)
 ![Three.js r160](https://img.shields.io/badge/Three.js-r160-000000?logo=threedotjs&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-supported-2496ED?logo=docker&logoColor=white)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.NNNNNNN.svg)](https://doi.org/10.5281/zenodo.NNNNNNN)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23313342.svg)](https://doi.org/10.5281/zenodo.23313342)
 
 </div>
 
