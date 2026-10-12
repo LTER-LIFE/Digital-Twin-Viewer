@@ -1,0 +1,44 @@
+{
+  "format": "dtv-observations/1",
+  "id": "rws-mwtl-spm-surface",
+  "title": "RWS MWTL — suspended matter, near-surface samples",
+  "description": "Rijkswaterstaat MWTL water-quality monitoring, 1972–2021: suspended matter (zwevende stof, dry weight after filtration) in water samples at ~110 Wadden Sea and coastal stations, monthly to fortnightly. Split from MWTL_Turbidity.csv with tools/split_csv.py --by referentievlak; only quality code 0 (normal value) is kept. These are the samples referenced to the water surface (WATSGL), taken 1–4 m below it.",
+  "source": "Rijkswaterstaat (MWTL), WFS layer mwtl_zwevendstof",
+  "time_zone": "UTC",
+  "columns": {
+    "locatie.code": "station",
+    "locatie.naam": "station_name",
+    "tijdstip": "time",
+    "geometriepunt.y": "lat",
+    "geometriepunt.x": "lon",
+    "parameter.code": "variable",
+    "numeriekewaarde": "value",
+    "eenheid.code": "units",
+    "kwaliteitswaarde.code": "flag",
+    "bemonsteringshoogte": "depth"
+  },
+  "ignore": [
+    "FID",
+    "compartiment.code",
+    "grootheid.code",
+    "parameter.omschrijving",
+    "coordinatenstelsel",
+    "referentievlak",
+    "geom"
+  ],
+  "vertical_units": "cm",
+  "vertical_positive": "up",
+  "flags": {
+    "good": [
+      "0",
+      "00"
+    ]
+  },
+  "variables": {
+    "ZS": {
+      "units": "mg/l",
+      "long_name": "Suspended particulate matter",
+      "quantity": "suspended_particulate_matter"
+    }
+  }
+}

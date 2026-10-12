@@ -1,0 +1,43 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata from this file."
+type: software
+title: "Digital Twin Viewer"
+abstract: >-
+  Digital Twin Viewer is an open-source, browser-based suite of interactive
+  visualization and post-processing tools for coastal and shelf-sea model
+  output. It renders ecosystem model fields and intertidal flat dynamics in
+  three dimensions, provides point, transect, area and vertical-profile
+  analysis, and integrates observational networks and field data for direct
+  comparison with model output. It reads model output in NetCDF format with a
+  structure similar to that produced by GETM-ERSEM-BFM; the Dutch Wadden Sea
+  and the North-West European Shelf are example applications.
+authors:
+  - given-names: "Christos P."
+    family-names: Giannopoulos
+    email: christos.giannopoulos@nioz.nl
+    orcid: "https://orcid.org/0000-0003-0973-1275"
+    affiliation: "NIOZ Royal Netherlands Institute for Sea Research"
+  - given-names: Petros
+    family-names: Giannopoulos
+    email: petrosyannopoulos@gmail.com
+repository-code: "https://github.com/LTER-LIFE/Digital-Twin-Viewer"
+version: 1.0.0
+date-released: 2026-10-12
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.NNNNNNN
+license: Apache-2.0
+keywords:
+  - digital twin
+  - coastal ocean modelling
+  - ecosystem model
+  - GETM
+  - ERSEM
+  - BFM
+  - NetCDF
+  - 3-D visualization
+  - WebGL
+  - intertidal flats
+  - Wadden Sea
+  - North-West European Shelf
+  - model validation

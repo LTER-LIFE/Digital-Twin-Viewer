@@ -1,0 +1,19 @@
+{
+  "format": "dtv-observations/1",
+  "id": "nioz-jetty-hw",
+  "title": "NIOZ jetty — high-water samples",
+  "description": "Bucket samples taken at high water from the NIOZ jetty, 1990-; dates only (time of day not kept).",
+  "source": "NIOZ Royal Netherlands Institute for Sea Research",
+  "time_zone": "UTC",
+  "stations": {"NIOZ-JETTY": {"name": "NIOZ jetty (Texel)", "lat": 53.0020, "lon": 4.7890}},
+  "variables": {
+    "temp":   {"units": "degC",   "long_name": "Sea surface temperature (bucket)", "level": "surface"},
+    "secchi": {"units": "m",      "long_name": "Secchi depth"},
+    "chla":   {"units": "ug/l",   "long_name": "Chlorophyll-a (HPLC)", "level": "surface"},
+    "no3":    {"units": "umol/l", "long_name": "Nitrate", "level": "surface"},
+    "no2":    {"units": "umol/l", "long_name": "Nitrite", "level": "surface"},
+    "nh4":    {"units": "umol/l", "long_name": "Ammonium", "level": "surface"},
+    "po4":    {"units": "umol/l", "long_name": "Phosphate", "level": "surface"},
+    "sio2":   {"units": "umol/l", "long_name": "Silicate", "level": "surface"}
+  }
+}

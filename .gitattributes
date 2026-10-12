@@ -1,0 +1,17 @@
+# Dataset blobs: never apply text or end-of-line conversion.
+#
+# This is not theoretical. flow.bin encodes each velocity component as
+# sign(c)*sqrt(|c|/scale)*127 + 128, so every byte lands in 1..255 and the file
+# contains no NUL at all. Git's content heuristic only looks for a NUL in the
+# first 8000 bytes, so it classifies flow.bin as TEXT -- it shows up in
+# `git show --stat` as "1 +" rather than "Bin". Today the byte values that would
+# matter (0x0A) happen not to occur, but the mapping depends on the per-dataset
+# `scale`, so a regenerated file can contain them. With core.autocrlf=true, a
+# checkout would then expand each 0x0A to 0x0D0A and shift the whole field --
+# a corrupted flow layer with no error anywhere.
+*.bin binary
+*.nc  binary
+
+# Keep the obvious ones explicit too, so nothing depends on content sniffing.
+*.jpg binary
+*.png binary

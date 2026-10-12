@@ -1,0 +1,62 @@
+{
+  "format": "dtv-observations/1",
+  "id": "subes",
+  "title": "SUBES — subtidal sediment and macrozoobenthos",
+  "description": "Subtidal Benthic Survey of the Dutch Wadden Sea, 2015–2019 (spring): box-core samples, ~400 stations per year. Carbon per ERSEM-BFM feeding group from AFDM x species energy content / 45.8 kJ/g C, split over groups with MARINETRAITS fuzzy scores; built with tools/prepare_benthos.py. Samples without fauna records are left empty, not set to zero.",
+  "source": "NIOZ Royal Netherlands Institute for Sea Research (SUBES)",
+  "time_zone": "UTC",
+  "variables": {
+    "median_grain_size": {
+      "units": "um",
+      "long_name": "Median grain size",
+      "level": "bed"
+    },
+    "percentage_mud": {
+      "units": "%",
+      "long_name": "Silt fraction",
+      "level": "bed"
+    },
+    "afdm_total": {
+      "units": "g AFDM/m2",
+      "long_name": "Macrozoobenthos biomass (AFDM)",
+      "quantity": "macrozoobenthos_biomass_afdm",
+      "level": "bed"
+    },
+    "abundance": {
+      "units": "1/m2",
+      "long_name": "Macrozoobenthos abundance",
+      "quantity": "macrozoobenthos_abundance",
+      "level": "bed"
+    },
+    "epibenthos": {
+      "units": "g C/m2",
+      "long_name": "Epibenthos (Y1)",
+      "quantity": "epibenthos_carbon",
+      "level": "bed"
+    },
+    "deposit_feeders": {
+      "units": "g C/m2",
+      "long_name": "Deposit feeders (Y2)",
+      "quantity": "deposit_feeders_carbon",
+      "level": "bed"
+    },
+    "suspension_feeders": {
+      "units": "g C/m2",
+      "long_name": "Suspension feeders (Y3)",
+      "quantity": "suspension_feeders_carbon",
+      "level": "bed"
+    },
+    "endobenthos": {
+      "units": "g C/m2",
+      "long_name": "Endobenthos (Y5)",
+      "quantity": "endobenthos_carbon",
+      "level": "bed"
+    },
+    "total_carbon": {
+      "units": "g C/m2",
+      "long_name": "Macrozoobenthos carbon",
+      "quantity": "macrozoobenthos_carbon",
+      "level": "bed"
+    }
+  }
+}

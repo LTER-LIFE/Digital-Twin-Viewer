@@ -1,0 +1,28 @@
+services:
+  digital-twin-viewer:
+    image: harbor.nioz.nl/nioz/wademoaas:latest
+    container_name: wademoaas
+    ports:
+      # renamed from TIDAL_FLATS_PORT; set DTV_PORT to map a different host port
+      - "${DTV_PORT:-8501}:8501"
+    environment:
+      HOST: 0.0.0.0
+      PORT: 8501
+    volumes:
+      # These two keep their old names ON PURPOSE. A named volume is identified
+      # by that name, so renaming it points the app at a fresh, empty one: the
+      # bundled dataset is re-seeded, but every dataset anyone has uploaded to a
+      # running deployment stops being visible. The data is not destroyed, just
+      # orphaned under the old name, and recovering it means copying by hand. A
+      # tidier label is not worth that. To rename them anyway, on each host:
+      #   docker volume create digital-twin-viewer-data
+      #   docker run --rm -v tidal-flats-data:/from -v digital-twin-viewer-data:/to \
+      #     alpine sh -c "cp -a /from/. /to/"
+      # then repeat for -uploads and update the four names below.
+      - tidal-flats-data:/app/data
+      - tidal-flats-uploads:/app/uploads
+    restart: unless-stopped
+
+volumes:
+  tidal-flats-data:
+  tidal-flats-uploads:

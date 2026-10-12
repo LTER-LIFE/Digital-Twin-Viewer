@@ -1,0 +1,18 @@
+Digital Twin Viewer
+Copyright 2026 The Digital Twin Viewer Authors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+Authors: Christos P. Giannopoulos and Petros Giannopoulos.
+
+This product includes third-party software, distributed under its own license.
+See THIRD_PARTY_NOTICES.md for details and the full license texts.
+
+  three.js r160 (lib/three.module.js, lib/OrbitControls.js)
+  Copyright (c) 2010-2023 three.js authors. MIT License.
+
+  Scientific colour maps (colour tables in js/cmapdata.js)
+  Copyright (c) 2020 Fabio Crameri. MIT License.
+
+The bundled satellite image data/default/satellite.jpg is derived from Esri
+World Imagery (Imagery (c) Esri, Maxar, Earthstar Geographics). It is not
+covered by the Apache License; see THIRD_PARTY_NOTICES.md.

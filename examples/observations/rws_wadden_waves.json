@@ -1,0 +1,16 @@
+{
+  "format": "dtv-observations/1",
+  "id": "rws-wadden-waves",
+  "title": "RWS Wadden Sea — waves and water level",
+  "description": "Rijkswaterstaat wave buoys and gauges, 10-minute; the file's valid_* masks are applied automatically.",
+  "source": "Rijkswaterstaat (data); NIOZ (processing)",
+  "include": ["hm0", "tm02", "tm_10", "wl", "u_orb"],
+  "time_range": ["2015-01-01", "2015-12-31T23:59:59"],
+  "variables": {
+    "hm0":   {"long_name": "Significant wave height"},
+    "tm02":  {"long_name": "Zero-crossing period (Tm02)"},
+    "tm_10": {"long_name": "Energy period (Tm-1,0)"},
+    "wl":    {"long_name": "Water level", "datum": "NAP"},
+    "u_orb": {"long_name": "Near-bed orbital velocity (amplitude)"}
+  }
+}

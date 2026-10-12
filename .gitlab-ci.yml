@@ -1,0 +1,49 @@
+stages:
+  - build
+
+variables:
+  IMAGE: harbor.nioz.nl/nioz/wademoaas
+  # The repo carries ~380 MB of dataset blobs and get_sources spends ~30 s on
+  # them; no job needs their history.
+  GIT_DEPTH: "1"
+
+build:
+  stage: build
+  # Shell executor on linux-dev: the docker CLI and daemon are on the host, so
+  # no image:/services: here. Layer cache is the host daemon's own.
+  tags:
+    - docker
+    - linux
+  interruptible: true
+  before_script:
+    - |
+      set -eu
+      : "${HARBOR_USERNAME:?set HARBOR_USERNAME in Settings > CI/CD > Variables}"
+      : "${HARBOR_PASSWORD:?set HARBOR_PASSWORD in Settings > CI/CD > Variables (masked, protected)}"
+      # --password-stdin: -p is deprecated and puts the token in `ps` output
+      printf '%s' "$HARBOR_PASSWORD" | docker login -u "$HARBOR_USERNAME" --password-stdin harbor.nioz.nl
+  script:
+    # Every build gets an immutable tag. :latest alone is undeployable: a host
+    # that already holds a :latest does not re-pull it, and compose leaves an
+    # unchanged service running -- a stale image with a healthy container and
+    # clean logs.
+    - export SHA_TAG="$IMAGE:$CI_COMMIT_SHORT_SHA"
+    - docker build --pull --tag "$SHA_TAG" .
+    - docker push "$SHA_TAG"
+    # Only the default branch owns :latest, so a feature-branch pipeline cannot
+    # silently become what the deployment pulls.
+    - |
+      set -eu
+      if [ "$CI_COMMIT_BRANCH" = "$CI_DEFAULT_BRANCH" ]; then
+        docker tag "$SHA_TAG" "$IMAGE:latest"
+        docker push "$IMAGE:latest"
+      else
+        echo "not on $CI_DEFAULT_BRANCH -- pushed $SHA_TAG only, :latest untouched"
+      fi
+    - echo "deploy this build with WADEMOAAS_TAG=$CI_COMMIT_SHORT_SHA"
+  after_script:
+    # This runner's ~/.docker/config.json is shared by every job on the host.
+    - docker logout harbor.nioz.nl || true
+    # Each build leaves ~380 MB of superseded layers on linux-dev. Dangling
+    # only, week-old floor -- drop this if the host is pruned elsewhere.
+    - docker image prune -f --filter until=168h || true

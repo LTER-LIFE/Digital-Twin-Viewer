@@ -1,0 +1,19 @@
+{
+  "format": "dtv-observations/1",
+  "id": "nioz-jetty-hourly",
+  "title": "NIOZ jetty — hourly temperature and salinity",
+  "description": "Hourly values from the sensors on the NIOZ jetty, Texel, at -1.5 m NAP; QC'd and stamped at the end of the hour (TESO step 13).",
+  "source": "NIOZ Royal Netherlands Institute for Sea Research",
+  "citation": "NIOZ jetty hourly data for temperature and salinity, doi:10.25850/nioz/7b.b.wh",
+  "license": "CC0-1.0",
+  "time_zone": "UTC",
+  "vertical_datum": "NAP",
+  "stations": {
+    "NIOZ-JETTY": {"name": "NIOZ jetty (Texel)", "lat": 53.0020, "lon": 4.7890, "elevation": -1.5}
+  },
+  "flags": {"good": [0]},
+  "variables": {
+    "temp": {"units": "degC", "long_name": "Water temperature"},
+    "sal":  {"units": "PSU",  "long_name": "Salinity"}
+  }
+}

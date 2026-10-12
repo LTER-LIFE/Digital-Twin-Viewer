@@ -1,0 +1,14 @@
+# Processing dependencies for digital_twin_viewer (.nc conversion + satellite drape).
+# The web viewer itself is dependency-free — plain Python serves it.
+#   pip install -r requirements.txt
+numpy
+scipy
+netCDF4
+Pillow
+# IANA time zones ('Europe/Amsterdam') for observation files; the slim image has
+# no system zone database, and fixed offsets ('+01:00') work without it
+tzdata
+
+# Only needed to regenerate js/cmapdata.js (tools/gen_cmapdata.py); the app
+# ships the generated table and does not need this at runtime.
+cmcrameri

@@ -1,0 +1,25 @@
+{
+  "format": "dtv-observations/1",
+  "id": "rws-mwtl-marsdiep-noord",
+  "title": "RWS MWTL — Marsdiep Noord water quality",
+  "description": "Rijkswaterstaat MWTL samples, ~19 per year at 1 m depth; converted to model units and QC'd by TESO step 13.",
+  "source": "Rijkswaterstaat (MWTL), via WaterWebservices DDAPI 2.0",
+  "time_zone": "UTC",
+  "stations": {"MARSDND": {"name": "Marsdiep Noord (MWTL)", "lat": 52.9825, "lon": 4.7499}},
+  "columns": {"sample_depth_m": "depth"},
+  "flags": {"good": [0]},
+  "variables": {
+    "temp":   {"units": "degC",   "long_name": "Water temperature"},
+    "sal":    {"units": "PSU",    "long_name": "Salinity"},
+    "chla":   {"units": "ug/l",   "long_name": "Chlorophyll-a"},
+    "spm":    {"units": "mg/l",   "long_name": "Suspended particulate matter"},
+    "no3":    {"units": "umol/l", "long_name": "Nitrate"},
+    "nh4":    {"units": "umol/l", "long_name": "Ammonium"},
+    "po4":    {"units": "umol/l", "long_name": "Phosphate"},
+    "sio2":   {"units": "umol/l", "long_name": "Silicate"},
+    "o2":     {"units": "umol/l", "long_name": "Dissolved oxygen"},
+    "secchi": {"units": "m",      "long_name": "Secchi depth"},
+    "turb":   {"units": "FNU",    "long_name": "Turbidity"},
+    "ph":     {"units": "1",      "long_name": "pH"}
+  }
+}

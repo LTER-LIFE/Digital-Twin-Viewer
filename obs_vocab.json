@@ -1,0 +1,277 @@
+{
+  "_comment": [
+    "Shared vocabulary for observations. Read by obs_ingest.py (Python) and by",
+    "js/observations.js (browser), so the two can never disagree about what a",
+    "column means or how its units convert.",
+    "",
+    "quantities: one entry per physical quantity. 'aliases' are matched against",
+    "observation variable names AND model variable keys, case-insensitively and",
+    "ignoring spaces, '-' and '_'; 'standard_names' are CF standard names. A model",
+    "key ending in '-avg' is the depth-averaged form of the same quantity.",
+    "",
+    "units: groups of interchangeable units, each with its factor to the group's",
+    "base unit (value_in_base = value * factor). 'approx' marks conversions that",
+    "are only approximately exact (e.g. g/kg -> PSU) so the viewer can say so.",
+    "Element tags inside a unit ('mg C/m2', 'mg Chl/m3', 'g AFDM/m2') are parsed",
+    "separately: two units with different tags never convert."
+  ],
+  "version": 1,
+
+  "quantities": {
+    "sea_water_temperature": {
+      "label": "Water temperature", "units": "degC", "group": "temperature",
+      "standard_names": ["sea_water_temperature", "sea_surface_temperature", "sea_water_potential_temperature"],
+      "aliases": ["temp", "t", "temperature", "watertemperature", "wt", "etw", "tw", "sst", "tempw", "twater", "temperatuur", "watertemperatuur"]
+    },
+    "sea_water_salinity": {
+      "label": "Salinity", "units": "PSU", "group": "salinity",
+      "standard_names": ["sea_water_salinity", "sea_water_practical_salinity", "sea_surface_salinity"],
+      "aliases": ["salt", "sal", "salinity", "s", "psal", "practicalsalinity", "so", "saliniteit"]
+    },
+    "water_level": {
+      "label": "Water level", "units": "m", "group": "length", "model_special": "level",
+      "standard_names": ["sea_surface_height", "sea_surface_height_above_geoid", "water_surface_height_above_reference_datum", "sea_surface_elevation"],
+      "aliases": ["wl", "waterlevel", "elev", "zeta", "ssh", "eta", "waterhoogte", "waterstand", "level"]
+    },
+    "water_depth": {
+      "label": "Water depth", "units": "m", "group": "length", "model_special": "depth",
+      "standard_names": ["sea_floor_depth_below_sea_surface"],
+      "aliases": ["waterdepth", "totaldepth", "htot", "htotal", "waterdiepte"]
+    },
+    "bed_level": {
+      "label": "Bed level", "units": "m", "group": "length",
+      "aliases": ["bedlevel", "bedelevation", "bottomlevel", "seabedlevel", "bodemhoogte", "bodemligging", "zb"]
+    },
+    "current_speed": {
+      "label": "Current speed", "units": "m/s", "group": "velocity",
+      "standard_names": ["sea_water_speed"],
+      "aliases": ["speed", "curspeed", "currentspeed", "velocity", "umag", "vel", "stroomsnelheid"]
+    },
+    "significant_wave_height": {
+      "label": "Significant wave height", "units": "m", "group": "length",
+      "standard_names": ["sea_surface_wave_significant_height"],
+      "aliases": ["hm0", "hs", "swh", "hsout", "waveheight", "vhm0", "hsig", "golfhoogte"]
+    },
+    "wave_period_zero_crossing": {
+      "label": "Wave zero-crossing period", "units": "s", "group": "time",
+      "standard_names": ["sea_surface_wave_mean_period_from_variance_spectral_density_second_frequency_moment"],
+      "aliases": ["tm02", "tz", "tzout", "t02", "tm2", "golfperiode"]
+    },
+    "wave_period_energy": {
+      "label": "Wave energy period", "units": "s", "group": "time",
+      "standard_names": ["sea_surface_wave_mean_period_from_variance_spectral_density_inverse_frequency_moment"],
+      "aliases": ["tm10", "tme", "te", "tmm10"]
+    },
+    "wave_period_peak": {
+      "label": "Wave peak period", "units": "s", "group": "time",
+      "standard_names": ["sea_surface_wave_period_at_variance_spectral_density_maximum"],
+      "aliases": ["tp", "tpeak", "peakperiod"]
+    },
+    "wave_direction": {
+      "label": "Mean wave direction", "units": "degree", "group": "angle",
+      "standard_names": ["sea_surface_wave_from_direction"],
+      "aliases": ["th0", "mwd", "wavedir", "wavedirection", "thetam"]
+    },
+    "wave_orbital_velocity": {
+      "label": "Near-bed wave orbital velocity (amplitude)", "units": "m/s", "group": "velocity",
+      "aliases": ["uorb", "uorbout", "ubot", "orbitalvelocity"]
+    },
+    "wave_orbital_velocity_rms": {
+      "label": "Near-bed wave orbital velocity (rms)", "units": "m/s", "group": "velocity",
+      "aliases": ["uorbrms", "ubotrms", "urms"]
+    },
+    "suspended_particulate_matter": {
+      "label": "Suspended particulate matter", "units": "mg/m3", "group": "mass_concentration",
+      "standard_names": ["mass_concentration_of_suspended_matter_in_sea_water"],
+      "aliases": ["spm", "tsm", "ess", "suspendedsediment", "suspendedmatter", "ssc", "smc", "zwevendestof", "zs"]
+    },
+    "chlorophyll_a": {
+      "label": "Chlorophyll-a", "units": "mg/m3", "group": "mass_concentration", "element": "chl",
+      "standard_names": ["mass_concentration_of_chlorophyll_a_in_sea_water", "mass_concentration_of_chlorophyll_in_sea_water"],
+      "aliases": ["chla", "chl", "chlorophyll", "chlorophylla", "chlfa", "pchl", "chlfla", "p1chl", "chlorofyla"]
+    },
+    "secchi_depth": {
+      "label": "Secchi depth", "units": "m", "group": "length",
+      "aliases": ["secchi", "secchidepth", "zicht", "zichtdiepte"]
+    },
+    "light_attenuation": {
+      "label": "Light attenuation coefficient", "units": "1/m", "group": "inverse_length",
+      "standard_names": ["volume_attenuation_coefficient_of_downwelling_radiative_flux_in_sea_water"],
+      "aliases": ["kd", "kdpar", "kpar", "xeps", "kdsecchi", "kdspm", "extinction"]
+    },
+    "nitrate": {
+      "label": "Nitrate", "units": "mmol/m3", "group": "molar_concentration", "element": "n",
+      "standard_names": ["mole_concentration_of_nitrate_in_sea_water"],
+      "aliases": ["no3", "n3n", "nitrate"]
+    },
+    "nitrite": {
+      "label": "Nitrite", "units": "mmol/m3", "group": "molar_concentration", "element": "n",
+      "aliases": ["no2", "nitrite"]
+    },
+    "ammonium": {
+      "label": "Ammonium", "units": "mmol/m3", "group": "molar_concentration", "element": "n",
+      "standard_names": ["mole_concentration_of_ammonium_in_sea_water"],
+      "aliases": ["nh4", "n4n", "ammonium"]
+    },
+    "phosphate": {
+      "label": "Phosphate", "units": "mmol/m3", "group": "molar_concentration", "element": "p",
+      "standard_names": ["mole_concentration_of_phosphate_in_sea_water"],
+      "aliases": ["po4", "n1p", "phosphate"]
+    },
+    "silicate": {
+      "label": "Silicate", "units": "mmol/m3", "group": "molar_concentration", "element": "si",
+      "standard_names": ["mole_concentration_of_silicate_in_sea_water"],
+      "aliases": ["si", "sio2", "sio4", "n5s", "silicate"]
+    },
+    "dissolved_oxygen": {
+      "label": "Dissolved oxygen", "units": "mmol/m3", "group": "molar_concentration", "element": "o2",
+      "standard_names": ["mole_concentration_of_dissolved_molecular_oxygen_in_sea_water"],
+      "aliases": ["o2", "o2o", "oxygen", "do", "dissolvedoxygen", "zuurstof"]
+    },
+    "dissolved_inorganic_carbon": {
+      "label": "Dissolved inorganic carbon", "units": "mmol/m3", "group": "molar_concentration", "element": "c",
+      "aliases": ["dic", "o3c"]
+    },
+    "ph": {
+      "label": "pH", "units": "1", "group": "dimensionless",
+      "standard_names": ["sea_water_ph_reported_on_total_scale"],
+      "aliases": ["ph"]
+    },
+    "turbidity": {
+      "label": "Turbidity", "units": "FNU", "group": "turbidity",
+      "standard_names": ["sea_water_turbidity"],
+      "aliases": ["turb", "turbidity", "troebelheid"]
+    },
+    "benthic_diatoms_carbon": {
+      "label": "Benthic diatoms", "units": "mg/m2", "group": "areal_mass", "element": "c",
+      "aliases": ["bp1c", "benthicdiatoms", "microphytobenthos", "mpb"]
+    },
+    "epibenthos_carbon": {
+      "label": "Epibenthos", "units": "mg/m2", "group": "areal_mass", "element": "c",
+      "aliases": ["y1c", "epibenthos", "epibenthoscarbon", "epibenthosbiomass"]
+    },
+    "deposit_feeders_carbon": {
+      "label": "Deposit feeders", "units": "mg/m2", "group": "areal_mass", "element": "c",
+      "aliases": ["y2c", "depositfeeders", "dfbiomass", "depositfeederbiomass"]
+    },
+    "suspension_feeders_carbon": {
+      "label": "Suspension feeders", "units": "mg/m2", "group": "areal_mass", "element": "c",
+      "aliases": ["y3c", "suspensionfeeders", "sfbiomass", "suspensionfeederbiomass", "filterfeeders"]
+    },
+    "meiobenthos_carbon": {
+      "label": "Meiobenthos", "units": "mg/m2", "group": "areal_mass", "element": "c",
+      "aliases": ["y4c", "meiobenthos", "meiobenthoscarbon"]
+    },
+    "endobenthos_carbon": {
+      "label": "Endobenthos", "units": "mg/m2", "group": "areal_mass", "element": "c",
+      "aliases": ["y5c", "endobenthos", "endobenthoscarbon", "endobenthosbiomass"]
+    },
+    "macrozoobenthos_carbon": {
+      "label": "Macrozoobenthos carbon (Y1+Y2+Y3+Y5)", "units": "mg/m2", "group": "areal_mass", "element": "c",
+      "aliases": ["macrozoobenthoscarbon", "totalcarbon", "benthoscarbon", "totalbenthiccarbon"]
+    },
+    "macrozoobenthos_biomass_afdm": {
+      "label": "Macrozoobenthos biomass (AFDM)", "units": "mg/m2", "group": "areal_mass", "element": "afdm",
+      "aliases": ["afdm", "afdmm2", "biomassafdm", "totalafdm"]
+    },
+    "macrozoobenthos_abundance": {
+      "label": "Macrozoobenthos abundance", "units": "1/m2", "group": "areal_density",
+      "aliases": ["abundance", "abundancem2", "density", "dichtheid"]
+    },
+    "median_grain_size": {
+      "label": "Median grain size", "units": "um", "group": "length",
+      "aliases": ["d50", "mediangrainsize", "mgs", "grainsize", "korrelgrootte"]
+    },
+    "mud_fraction": {
+      "label": "Mud fraction", "units": "%", "group": "fraction",
+      "aliases": ["mud", "percentagemud", "mudcontent", "mudfraction", "slibgehalte", "silt"]
+    },
+    "wind_eastward": {
+      "label": "Eastward wind", "units": "m/s", "group": "velocity",
+      "standard_names": ["eastward_wind"],
+      "aliases": ["u10", "euwind", "uwind", "windu"]
+    },
+    "wind_northward": {
+      "label": "Northward wind", "units": "m/s", "group": "velocity",
+      "standard_names": ["northward_wind"],
+      "aliases": ["v10", "evwind", "vwind", "windv"]
+    },
+    "wind_speed": {
+      "label": "Wind speed", "units": "m/s", "group": "velocity",
+      "standard_names": ["wind_speed"],
+      "aliases": ["windspeed", "ws", "wspd", "windsnelheid"]
+    }
+  },
+
+  "units": {
+    "temperature": {
+      "base": "degC",
+      "factors": {"degc": 1, "°c": 1, "c": 1, "degreec": 1, "degreesc": 1, "celsius": 1, "degreescelsius": 1, "oc": 1},
+      "offsets": {"k": -273.15, "kelvin": -273.15}
+    },
+    "salinity": {
+      "base": "PSU",
+      "factors": {"psu": 1, "pss78": 1, "pss": 1, "1e-3": 1, "0.001": 1, "1": 1},
+      "approx": {"g/kg": 1, "ppt": 1, "‰": 1, "promille": 1}
+    },
+    "length": {
+      "base": "m",
+      "factors": {"m": 1, "meter": 1, "metre": 1, "meters": 1, "cm": 0.01, "mm": 0.001, "dm": 0.1, "km": 1000, "um": 1e-6, "micron": 1e-6, "micrometer": 1e-6, "nm": 1e-9}
+    },
+    "velocity": {
+      "base": "m/s",
+      "factors": {"m/s": 1, "ms-1": 1, "m.s-1": 1, "cm/s": 0.01, "cms-1": 0.01, "mm/s": 0.001, "kn": 0.514444, "knots": 0.514444, "km/h": 0.277778}
+    },
+    "time": {
+      "base": "s",
+      "factors": {"s": 1, "sec": 1, "seconds": 1, "min": 60, "h": 3600, "hr": 3600}
+    },
+    "angle": {
+      "base": "degree",
+      "factors": {"degree": 1, "degrees": 1, "deg": 1, "°": 1, "degreetrue": 1, "rad": 57.29577951308232}
+    },
+    "inverse_length": {
+      "base": "1/m",
+      "factors": {"1/m": 1, "m-1": 1, "/m": 1, "1/cm": 100}
+    },
+    "mass_concentration": {
+      "base": "mg/m3",
+      "factors": {"mg/m3": 1, "mgm-3": 1, "mg.m-3": 1, "ug/l": 1, "ugl-1": 1, "mg/l": 1000, "mgl-1": 1000, "g/m3": 1000, "gm-3": 1000, "ng/l": 0.001, "ng/ml": 1, "kg/m3": 1000000, "g/l": 1000000}
+    },
+    "molar_concentration": {
+      "base": "mmol/m3",
+      "factors": {"mmol/m3": 1, "mmolm-3": 1, "umol/l": 1, "umoll-1": 1, "um": 1, "mol/m3": 1000, "mmol/l": 1000, "nmol/l": 0.001},
+      "approx": {"umol/kg": 1.025}
+    },
+    "areal_mass": {
+      "base": "mg/m2",
+      "factors": {"mg/m2": 1, "mgm-2": 1, "g/m2": 1000, "gm-2": 1000, "kg/m2": 1000000, "ug/m2": 0.001, "kg/ha": 100}
+    },
+    "areal_density": {
+      "base": "1/m2",
+      "factors": {"1/m2": 1, "m-2": 1, "n/m2": 1, "ind/m2": 1, "individuals/m2": 1, "#/m2": 1}
+    },
+    "fraction": {
+      "base": "%",
+      "factors": {"%": 1, "percent": 1, "pct": 1, "fraction": 100}
+    },
+    "dimensionless": {
+      "base": "1",
+      "factors": {"1": 1, "": 1, "-": 1, "dimensionless": 1, "nvt": 1}
+    },
+    "turbidity": {
+      "base": "FNU",
+      "factors": {"fnu": 1, "ntu": 1, "ftu": 1}
+    },
+    "pressure": {
+      "base": "Pa",
+      "factors": {"pa": 1, "n/m2": 1, "kpa": 1000, "dbar": 10000, "bar": 100000}
+    },
+    "kinematic_stress": {
+      "base": "m2/s2",
+      "factors": {"m2/s2": 1, "m2s-2": 1}
+    }
+  },
+
+  "elements": ["chlorophylla", "chla", "chl", "afdm", "dw", "ww", "c", "n", "p", "si", "o2", "o"]
+}

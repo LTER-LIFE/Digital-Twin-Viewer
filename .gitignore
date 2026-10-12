@@ -1,0 +1,8 @@
+/CLAUDE.md
+__pycache__/
+*.py[cod]
+
+# regenerable dataset artifacts — only the bundled default ships with the repo
+uploads/
+data/*
+!data/default/

@@ -1,0 +1,565 @@
+/* ==========================================================================
+   Digital Twin Viewer — application shell.
+
+   Layout is a four-column CSS grid: rail | sidebar | view | dock. The sidebar
+   and the dock collapse by setting their width variable to 0, which makes the
+   view cell GROW rather than being covered — the model domain is never hidden
+   behind a panel. The renderer sizes itself from the view cell (ResizeObserver
+   in app.js), and all pointer maths is canvas-relative, so nothing here can
+   silently desynchronise picking from what is drawn.
+   ========================================================================== */
+
+:root{
+  /* Tells the browser to draw the controls it owns - checkboxes, number
+     spinners, scrollbars, the select popup - from its dark palette. Without
+     it they come back in the OS light theme: a white checkbox on a near-black
+     panel, which is the single loudest mismatch in the sidebar. */
+  color-scheme: dark;
+
+  --bg:        #0a1620;
+  --bg-2:      #0d1c28;
+  --panel:     rgba(10, 22, 32, 0.78);
+  --line:      rgba(120, 200, 235, 0.18);
+  --line-2:    rgba(120, 200, 235, 0.32);
+  --accent:    #5fd4ff;
+  --accent2:   #ffc857;
+  --danger:    #ff6b6b;
+  --text:      #e8f4fa;
+  --muted:     #9db8c6;
+  --dim:       #6d8695;
+
+  --rail-w:    48px;
+  --sb-w:      320px;
+  --dk-w:      380px;
+
+  --r:         8px;
+  --fs:        12px;
+}
+
+*{ margin:0; padding:0; box-sizing:border-box; }
+
+html,body{
+  width:100%; height:100%; overflow:hidden; background:var(--bg);
+  font-family:"Segoe UI", system-ui, sans-serif; color:var(--text);
+  font-size:var(--fs); -webkit-user-select:none; user-select:none;
+}
+
+/* Two variables per panel, deliberately.
+   --sb-w / --dk-w are the REMEMBERED widths, and the drag handles write them as
+   an inline style on #app. --sb-eff / --dk-eff are what the grid actually uses.
+   They have to be separate: an inline style beats a class rule, so if the
+   collapsed state zeroed --sb-w directly, then any panel that had ever been
+   dragged (or restored at a stored width) could no longer collapse — the column
+   kept its width while the panel inside it was display:none, leaving an empty
+   black strip. Collapsing overrides the derived variable instead, which no
+   inline style touches. */
+#app{
+  display:grid; height:100%; width:100%;
+  --sb-eff: var(--sb-w);
+  --dk-eff: var(--dk-w);
+  grid-template-columns: var(--rail-w) var(--sb-eff) 1fr var(--dk-eff);
+  grid-template-rows: 100%;
+}
+#app.sb-closed{ --sb-eff: 0px; }
+#app.dk-closed{ --dk-eff: 0px; }
+/* while a resizer is being dragged, stop the pointer from selecting text or
+   being stolen by the canvas's own drag handling */
+#app.dragging{ cursor:col-resize; }
+#app.dragging *{ pointer-events:none !important; }
+
+/* ------------------------------------------------------------------ rail */
+#rail{
+  grid-column:1; background:#08131c; border-right:1px solid var(--line);
+  display:flex; flex-direction:column; align-items:center; padding:8px 0; gap:2px;
+  z-index:20;
+}
+.rail-gap{ flex:1; }
+.rail-btn{
+  width:38px; height:38px; border:none; background:transparent; border-radius:var(--r);
+  color:var(--dim); cursor:pointer; display:flex; align-items:center; justify-content:center;
+  position:relative; transition:color .12s, background .12s;
+}
+.rail-btn svg{ width:20px; height:20px; fill:none; stroke:currentColor;
+  stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
+.rail-btn:hover{ color:var(--text); background:rgba(255,255,255,.05); }
+/* the generic button.on further down fills with the accent colour; a rail icon
+   marks itself active with the tint and the edge bar instead */
+.rail-btn.on{ color:var(--accent); background:rgba(95,212,255,.10); border-color:transparent; }
+.rail-btn.on::before{
+  content:''; position:absolute; left:-5px; top:7px; bottom:7px; width:2px;
+  border-radius:2px; background:var(--accent);
+}
+.rail-btn[disabled]{ opacity:.3; cursor:default; }
+
+/* --------------------------------------------------------------- sidebar */
+#sidebar{
+  grid-column:2; background:var(--bg-2); border-right:1px solid var(--line);
+  display:flex; flex-direction:column; min-width:0; position:relative; z-index:15;
+}
+#app.sb-closed #sidebar{ display:none; }
+#sb-head{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 14px 10px; flex:none;
+}
+#sb-title{ font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+#sb-close, #dk-close{
+  background:transparent; border:none; color:var(--dim); cursor:pointer;
+  font-size:12px; padding:2px 4px; border-radius:4px;
+}
+#sb-close:hover, #dk-close:hover{ color:var(--text); background:rgba(255,255,255,.06); }
+#sb-body{ flex:1; overflow-y:auto; overflow-x:hidden; padding:0 14px 20px; }
+.sb-sec{ display:none; }
+.sb-sec.on{ display:block; }
+
+/* thin scrollbars everywhere inside panels */
+#sb-body, #dk-body, #ds-list{ scrollbar-width:thin; scrollbar-color:rgba(120,200,235,.3) transparent; }
+#sb-body::-webkit-scrollbar, #dk-body::-webkit-scrollbar{ width:8px; }
+#sb-body::-webkit-scrollbar-thumb, #dk-body::-webkit-scrollbar-thumb{
+  background:rgba(120,200,235,.28); border-radius:4px; }
+
+/* ------------------------------------------------------------- resizers */
+.resizer{ position:absolute; top:0; bottom:0; width:6px; cursor:col-resize; z-index:25; }
+#sb-resize{ right:-3px; }
+#dk-resize{ left:-3px; }
+.resizer:hover{ background:rgba(95,212,255,.25); }
+
+/* ------------------------------------------------------------------ view */
+#view{ grid-column:3; position:relative; min-width:0; overflow:hidden; background:#081420; }
+#canvas-wrap{ position:absolute; inset:0; }
+#canvas-wrap canvas{ display:block; }
+#view.picking #canvas-wrap{ cursor:crosshair; }
+
+/* ------------------------------------------------------------------ dock */
+#dock{
+  grid-column:4; background:var(--bg-2); border-left:1px solid var(--line);
+  display:flex; flex-direction:column; min-width:0; position:relative; z-index:15;
+}
+#app.dk-closed #dock{ display:none; }
+#dk-head{ display:flex; align-items:center; justify-content:space-between;
+  padding:8px 10px 0 12px; flex:none; gap:6px; }
+.tabs{ display:flex; gap:2px; min-width:0; }
+.tab{
+  background:transparent; border:none; border-bottom:2px solid transparent;
+  color:var(--dim); font-size:11.5px; font-weight:600; padding:5px 8px;
+  cursor:pointer; white-space:nowrap;
+}
+.tab:hover:not([disabled]){ color:var(--text); }
+/* transparent, not the accent fill of the generic button.on — an underline is
+   the tab idiom, and the fill would hide the label */
+.tab.on{ color:var(--accent); background:transparent; border-bottom-color:var(--accent); }
+.tab[disabled]{ opacity:.35; cursor:default; }
+#dk-body{ flex:1; min-height:0; overflow-y:auto; padding:10px 12px 14px;
+  display:flex; flex-direction:column; gap:10px; }
+/* the visible chart grows to fill the dock instead of leaving dead space below */
+.chart-wrap{ position:relative; width:100%; display:flex; flex-direction:column;
+  gap:8px; min-height:0; }
+.chart-wrap:not([hidden]){ flex:1 1 auto; }
+.chart-wrap canvas{ display:block; width:100%; cursor:crosshair;
+  flex:1 1 auto; min-height:170px; }
+/* the vertical panel carries its own small controls; they must not steal
+   height from the plot, which is already the tightest thing in the dock */
+.vert-bar{ display:flex; gap:12px; align-items:center; flex:none; margin-bottom:6px;
+  flex-wrap:wrap; }
+.vert-bar .chk{ font-size:10.5px; gap:5px; margin:0; }
+#c-series2, #c-series3{ flex:0 0 130px; min-height:130px; }
+#dk-caption{ font-size:10.5px; color:var(--dim); line-height:1.6; }
+#readout{ font-size:11px; line-height:1.7; color:var(--muted);
+  border-top:1px solid rgba(255,255,255,.07); padding-top:8px; }
+#readout b{ color:var(--text); font-weight:600; }
+#readout .nd{ color:var(--dim); font-style:italic; }
+
+/* ================================================================ widgets */
+h3{
+  font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--dim);
+  font-weight:600; margin:18px 0 8px; padding-top:12px;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+.sb-sec > h3:first-child{ margin-top:4px; border-top:none; padding-top:0; }
+
+.ctl-row{ margin:10px 0 3px; font-size:11.5px; color:var(--muted);
+  display:flex; justify-content:space-between; gap:8px; }
+.ctl-row output{ color:var(--text); font-weight:600; font-variant-numeric:tabular-nums; }
+
+input[type=range]{ width:100%; accent-color:var(--accent); height:20px; cursor:pointer; }
+
+button{
+  background:rgba(95,212,255,.10); color:var(--text); border:1px solid rgba(95,212,255,.26);
+  border-radius:6px; padding:6px 11px; font-size:11.5px; font-weight:600; cursor:pointer;
+  font-family:inherit; transition:background .13s, transform .05s;
+}
+button:hover:not([disabled]){ background:rgba(95,212,255,.24); }
+button:active:not([disabled]){ transform:scale(.97); }
+button.on{ background:var(--accent); color:#062331; border-color:var(--accent); }
+button[disabled]{ opacity:.4; cursor:default; }
+button.wide{ width:100%; }
+button.sm{ padding:4px 8px; font-size:11px; }
+.btn-row{ display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
+.btn-row.seg{ gap:0; }
+.btn-row.seg button{ flex:1; border-radius:0; border-left-width:0; }
+.btn-row.seg button:first-child{ border-radius:6px 0 0 6px; border-left-width:1px; }
+.btn-row.seg button:last-child{ border-radius:0 6px 6px 0; }
+
+select, input[type=number], input[type=date], input[type=text]{
+  width:100%; background:rgba(0,0,0,.28); color:var(--text); font-family:inherit;
+  border:1px solid var(--line); border-radius:6px; padding:5px 7px; font-size:11.5px;
+  transition:background-color .13s, border-color .13s;
+}
+select:hover:not([disabled]), input:hover:not([disabled]){ border-color:var(--line-2); }
+select:focus, input:focus{
+  outline:none; border-color:var(--accent);
+  box-shadow:0 0 0 2px rgba(95,212,255,.16);
+}
+
+/* A native select paints its own arrow and popup from the OS theme, so on
+   Windows these four controls came out light-grey against the dark panels
+   while every button beside them was drawn by this stylesheet. Suppressing the
+   native appearance and supplying the chevron ourselves is the only way to get
+   the closed control to match; the arrow is an inline SVG rather than a glyph
+   so it stays crisp and takes the accent colour. */
+select{
+  appearance:none; -webkit-appearance:none; -moz-appearance:none;
+  cursor:pointer; padding-right:26px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6' fill='none' stroke='%235fd4ff' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.25 5 5 9 1.25'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 9px center;
+  background-size:9px 5.5px;
+}
+select:hover:not([disabled]){ background-color:rgba(95,212,255,.10); }
+select[disabled]{ opacity:.4; cursor:default; }
+
+/* The dropped-open list is still drawn by the browser, and only these two
+   properties reliably reach it. Opaque, because the panel's translucent
+   background would sit over the map behind it. */
+select option{ background-color:var(--bg-2); color:var(--text); }
+select option:disabled{ color:var(--dim); }
+select optgroup{
+  background-color:var(--bg); color:var(--dim);
+  font-style:normal; font-weight:600;
+}
+.row2{ display:flex; gap:8px; }
+.row2 label{ flex:1; font-size:10.5px; color:var(--muted); display:block; }
+.row2 input{ margin-top:3px; font-variant-numeric:tabular-nums; }
+
+input[type=checkbox]{ accent-color:var(--accent); width:13px; height:13px; cursor:pointer; }
+
+/* ---------------------------------------------------- colormap picker
+   The trigger is deliberately a pixel-for-pixel copy of the styled <select>
+   above, chevron included, so the one control that had to become a custom
+   widget does not read as a different kind of control from its neighbours. */
+.cmsel{ position:relative; }
+.cmsel-native{ display:none; }
+.cmsel-btn{
+  display:flex; align-items:center; gap:8px; width:100%; text-align:left;
+  background:rgba(0,0,0,.28); color:var(--text); font-family:inherit; font-weight:400;
+  border:1px solid var(--line); border-radius:6px; padding:5px 26px 5px 7px;
+  font-size:11.5px; cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6' fill='none' stroke='%235fd4ff' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.25 5 5 9 1.25'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 9px center; background-size:9px 5.5px;
+  transition:background-color .13s, border-color .13s;
+}
+.cmsel-btn:hover{ background-color:rgba(95,212,255,.10); border-color:var(--line-2); }
+.cmsel-btn:focus-visible{
+  outline:none; border-color:var(--accent); box-shadow:0 0 0 2px rgba(95,212,255,.16);
+}
+.cmsel-btn:active{ transform:none; }          /* not a push-button */
+.cmsel-btn .nm{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* the swatch: right-aligned and vertically centred, so it reads as a property
+   of the row rather than a second line of content */
+.cmsel-sw{
+  flex:none; width:52px; height:11px; border-radius:3px;
+  border:1px solid rgba(255,255,255,.22); box-shadow:inset 0 0 0 1px rgba(0,0,0,.25);
+}
+
+.cmsel-pop{
+  position:fixed; z-index:70; overflow-y:auto; padding:4px;
+  background:var(--bg-2); border:1px solid var(--line-2); border-radius:8px;
+  box-shadow:0 14px 34px rgba(0,0,0,.6);
+  scrollbar-width:thin; scrollbar-color:rgba(120,200,235,.3) transparent;
+}
+.cmsel-pop::-webkit-scrollbar{ width:8px; }
+.cmsel-pop::-webkit-scrollbar-thumb{ background:rgba(120,200,235,.3); border-radius:4px; }
+.cmsel-grp{
+  font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--dim);
+  font-weight:600; padding:8px 8px 3px;
+}
+.cmsel-grp:first-child{ padding-top:3px; }
+.cmsel-opt{
+  display:flex; align-items:center; gap:9px; padding:4px 8px;
+  border-radius:5px; cursor:pointer; font-size:11.5px; color:var(--text);
+}
+.cmsel-opt .nm{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cmsel-opt.active{ background:rgba(95,212,255,.16); }
+.cmsel-opt.on{ color:var(--accent); font-weight:600; }
+.cmsel-opt.on .cmsel-sw{ border-color:var(--accent); }
+
+.chk{ display:flex; align-items:center; gap:7px; font-size:11.5px; color:var(--muted);
+  margin:8px 0; cursor:pointer; }
+.chk input{ accent-color:var(--accent); cursor:pointer; }
+
+.note{ font-size:10.5px; line-height:1.65; color:var(--dim); margin-top:9px; }
+.note.ok{ color:var(--accent); }
+.note.bad{ color:var(--danger); }
+.note b, .note strong{ color:var(--muted); font-weight:600; }
+.note.warn{ color:var(--accent2); }
+
+.props{ font-size:10.5px; line-height:1.7; display:grid;
+  grid-template-columns:auto 1fr; gap:2px 10px; }
+.props dt{ color:var(--dim); white-space:nowrap; }
+.props dd{ color:var(--muted); }
+.props.keys dt{ white-space:nowrap; }
+
+kbd{ background:rgba(255,255,255,.09); border-radius:3px; padding:1px 5px; font-size:10px;
+  font-family:inherit; border:1px solid rgba(255,255,255,.14); color:var(--muted); }
+
+/* ------------------------------------------------------- variable list */
+.var-item{
+  width:100%; text-align:left; display:flex; justify-content:space-between;
+  align-items:baseline; gap:8px; margin:4px 0; padding:7px 10px;
+}
+.var-item .vi-name{ font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.var-item .vi-sub{ font-size:10px; color:var(--muted); flex:none; }
+.var-item.on .vi-sub{ color:rgba(6,35,49,.75); }
+
+#cs-cmap{ margin-top:2px; }
+
+/* ------------------------------------------------------ dataset browser */
+#ds-toggle{ display:flex; justify-content:space-between; align-items:center; gap:8px; }
+#ds-toggle .cur{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#ds-caret{ flex:none; transition:transform .15s; }
+#ds-browser.open #ds-caret{ transform:rotate(180deg); }
+#ds-list{ display:none; margin-top:8px; max-height:40vh; overflow-y:auto; }
+#ds-browser.open #ds-list{ display:block; }
+.ds-item{ border:1px solid rgba(95,212,255,.16); border-radius:var(--r);
+  padding:7px 9px; margin:6px 0; background:rgba(0,0,0,.18); }
+.ds-item.cur{ border-color:var(--accent); background:rgba(95,212,255,.09); }
+.ds-head{ display:flex; align-items:center; gap:5px; }
+.ds-name{ flex:1; font-size:11.5px; font-weight:600; overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
+.ds-name .sub{ display:block; font-weight:400; font-size:10px; color:var(--muted); }
+.ds-btn{ padding:2px 7px; font-size:11px; flex:none; }
+.ds-btn.del:hover{ background:rgba(255,90,90,.3); border-color:rgba(255,90,90,.55); }
+.ds-info{ display:none; font-size:10.5px; color:var(--muted); line-height:1.7;
+  margin-top:7px; border-top:1px solid rgba(255,255,255,.08); padding-top:6px; }
+.ds-item.open .ds-info{ display:block; }
+.ds-info b{ color:var(--text); font-weight:600; }
+
+/* --------------------------------------------------------- selections */
+.sel-item{
+  display:flex; align-items:center; gap:7px; padding:5px 6px; margin:4px 0;
+  border:1px solid rgba(255,255,255,.08); border-radius:6px; background:rgba(0,0,0,.18);
+}
+.sel-item .sw{ width:10px; height:10px; border-radius:3px; flex:none; }
+.sel-item .nm{ flex:1; font-size:11px; overflow:hidden; text-overflow:ellipsis;
+  white-space:nowrap; cursor:text; min-width:0; }
+.sel-item .nm .sub{ display:block; font-size:9.5px; color:var(--dim); }
+/* the rename box takes the label's place in the row, so the row must not jump */
+.sel-item .rename{ flex:1; min-width:0; width:auto; padding:3px 5px; font-size:11px; }
+.sel-item .ren{ background:transparent; border:none; color:var(--dim); padding:2px 4px;
+  font-size:11px; }
+.sel-item .ren:hover{ color:var(--accent); background:transparent; }
+.sel-item .x{ background:transparent; border:none; color:var(--dim); padding:2px 4px; }
+.sel-item .x:hover{ color:var(--danger); background:transparent; }
+.sel-item.off{ opacity:.45; }
+.sel-item .eye{ background:transparent; border:none; color:var(--dim); padding:2px 4px; font-size:11px; }
+.sel-item .eye:hover{ color:var(--text); background:transparent; }
+
+/* ========================================================= map overlays */
+.ovl{
+  position:absolute; background:var(--panel); border:1px solid var(--line);
+  border-radius:10px; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  box-shadow:0 4px 18px rgba(0,0,0,.42); z-index:10;
+}
+[hidden]{ display:none !important; }
+
+/* The scene behind these overlays runs from a near-white sky to a dark seabed,
+   so nothing here can rely on the background being any particular tone: the
+   gradient carries the top strip and every glyph gets its own shadow. */
+#statusbar{
+  position:absolute; top:0; left:0; right:0; height:42px; z-index:12;
+  display:flex; align-items:center; justify-content:space-between; gap:14px;
+  padding:0 14px;
+  background:linear-gradient(180deg, rgba(6,16,24,.92) 35%, rgba(6,16,24,0));
+  pointer-events:none;
+  text-shadow:0 1px 3px rgba(0,0,0,.85);
+}
+/* The strip has to survive a narrow map area: open the sidebar and widen the
+   chart dock on a laptop screen and the three groups together want more room
+   than there is. Without this they keep their intrinsic widths and simply draw
+   over one another -- the season chip landing on the date, the tide chip sliding
+   under the dock. So each group clips its own content, and they give way in
+   priority order: the title and grid note first (.st-left), then the step
+   counter and date picker (dropped by the `tight` class below), while the date
+   and the two state chips never shrink. */
+#statusbar > *{ display:flex; align-items:center; gap:9px; min-width:0; overflow:hidden; }
+#statusbar > .st-left{ flex:1 1 auto; }
+#statusbar > .st-mid, #statusbar > .st-right{ flex:0 0 auto; }
+/* give way in order of how little is lost: the step counter and the date
+   picker first (the date is spelled out beside them and the scrubber shows the
+   position anyway), then the grid note. The run's name is the last thing to go,
+   and it ellipsises rather than disappearing. */
+#statusbar.tight #st-step, #statusbar.tight #st-jump{ display:none; }
+#statusbar.tighter #st-sub{ display:none; }
+#st-title{ font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--accent); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.st-sub{ font-size:10.5px; color:var(--muted); white-space:nowrap; }
+#st-date{ font-size:14px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
+#st-jump{ pointer-events:auto; width:auto; padding:2px 6px; font-size:10.5px;
+  background:rgba(0,0,0,.35); color:var(--muted); }
+#st-jump::-webkit-calendar-picker-indicator{ filter:invert(.7); cursor:pointer; }
+.chip{ font-size:10.5px; font-weight:600; padding:2px 9px; border-radius:999px;
+  background:rgba(95,212,255,.14); color:var(--accent); border:1px solid rgba(95,212,255,.28);
+  white-space:nowrap; }
+.chip.alt{ background:rgba(255,200,87,.11); color:var(--accent2); border-color:rgba(255,200,87,.28); }
+
+/* The same needle the exported figure draws, so a reader who sees both does
+   not have to work out that they mean the same thing. A rotating letter N was
+   ambiguous at a glance: it reads as a label, and upside down it reads as a
+   mistake. An arrow has an unmistakable pointy end, and the N below it stays
+   upright as a legend for the arrow rather than as the needle itself. */
+#compass{
+  position:absolute; top:46px; left:50%; transform:translateX(-50%); z-index:10;
+  width:46px; padding:5px 0 3px; border-radius:10px; background:var(--panel);
+  border:1px solid var(--line); display:flex; flex-direction:column;
+  align-items:center; gap:1px;
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+}
+#needle{ width:26px; height:26px; display:block; transition:transform .1s linear; }
+#needle path{ fill:var(--accent2); stroke:#fff; stroke-width:1.6; stroke-linejoin:round; }
+#compass span{ font-size:10px; font-weight:700; color:var(--text); line-height:1; }
+
+/* A scale bar has to be readable or it is worse than absent, and it sits over
+   whatever the camera happens to be pointing at — hence its own panel, like the
+   compass and the legend. */
+#scalebar{
+  position:absolute; right:14px; top:50px; z-index:10; text-align:right;
+  font-size:10.5px; color:var(--text); pointer-events:none;
+  padding:7px 11px 8px; background:var(--panel); border:1px solid var(--line);
+  border-radius:10px; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+}
+.sb-line{ display:flex; align-items:center; gap:7px; justify-content:flex-end; }
+#sb-bar{ display:inline-block; height:7px; border:1.5px solid var(--text);
+  border-top:none; min-width:20px; }
+#sb-len{ font-variant-numeric:tabular-nums; font-weight:600; }
+.sb-ve{ margin-top:4px; color:var(--accent2); font-weight:600; font-variant-numeric:tabular-nums; }
+
+#maplegend{ position:absolute; right:14px; bottom:74px; z-index:10; max-width:230px;
+  padding:10px 13px; background:var(--panel); border:1px solid var(--line); border-radius:10px;
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); font-size:10.5px; }
+.lg-head{ font-size:10px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--dim); margin-bottom:6px; }
+.li{ display:flex; align-items:center; gap:8px; margin:4px 0; color:var(--muted); }
+.li .sw{ width:13px; height:13px; border-radius:3px; flex:none; border:1px solid rgba(255,255,255,.18); }
+
+#colorbar{ position:absolute; left:14px; bottom:74px; z-index:10; width:236px;
+  padding:10px 13px; background:var(--panel); border:1px solid var(--line); border-radius:10px;
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
+#cb-bar{ height:13px; border-radius:4px; margin:2px 0 5px; position:relative;
+  border:1px solid rgba(255,255,255,.18); }
+/* hatched caps mark the ends where data is clamped rather than represented */
+#cb-bar .cap{ position:absolute; top:0; bottom:0; width:9px; display:none;
+  background-image:repeating-linear-gradient(45deg,
+    rgba(255,255,255,.75) 0 2px, rgba(0,0,0,0) 2px 4px); }
+#cb-bar .cap.lo{ left:0; border-radius:3px 0 0 3px; }
+#cb-bar .cap.hi{ right:0; border-radius:0 3px 3px 0; }
+#cb-bar .cap.show{ display:block; }
+#cb-scale{ display:flex; justify-content:space-between; font-size:10px;
+  color:var(--text); font-variant-numeric:tabular-nums; }
+#cb-mid{ color:var(--dim); }
+
+#timeline{
+  position:absolute; left:50%; transform:translateX(-50%); bottom:14px;
+  width:min(820px, calc(100% - 28px)); z-index:11;
+  display:flex; align-items:center; gap:12px; padding:9px 14px;
+  background:var(--panel); border:1px solid var(--line); border-radius:12px;
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  box-shadow:0 4px 18px rgba(0,0,0,.42);
+}
+#play{ width:38px; height:38px; border-radius:50%; font-size:15px; flex:none;
+  display:flex; align-items:center; justify-content:center; padding:0; }
+#day-slider{ flex:1; min-width:60px; }
+#tl-date{ font-size:12px; font-weight:700; width:78px; text-align:center; flex:none;
+  font-variant-numeric:tabular-nums; }
+.spd{ padding:4px 8px; font-size:10.5px; flex:none; }
+
+#attrib{ position:absolute; left:14px; bottom:4px; z-index:9; font-size:9.5px;
+  color:rgba(200,220,232,.55); text-shadow:0 1px 2px rgba(0,0,0,.6); pointer-events:none; }
+
+#tip{
+  position:absolute; pointer-events:none; z-index:30; display:none;
+  background:rgba(6,16,24,.92); border:1px solid var(--line); border-radius:9px;
+  padding:8px 11px; font-size:11px; line-height:1.55; white-space:nowrap;
+  box-shadow:0 4px 16px rgba(0,0,0,.5);
+}
+#tip b{ color:var(--accent); font-size:11.5px; }
+#tip .wet{ color:var(--accent); font-weight:700; }
+#tip .dry{ color:var(--accent2); font-weight:700; }
+#tip .nd{ color:var(--dim); font-style:italic; }
+#tip .val{ color:var(--accent2); font-weight:700; }
+
+/* ---------------------------------------------------------------- loader */
+#loader{ position:fixed; inset:0; z-index:100; background:#081420;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; }
+#loader h1{ font-size:20px; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--accent); font-weight:600; }
+#loader p{ color:var(--muted); font-size:12.5px; }
+#bar-wrap{ width:330px; height:9px; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden; }
+#bar{ height:100%; width:0%; border-radius:999px;
+  background:linear-gradient(90deg, #1c6ea8, var(--accent)); transition:width .12s; }
+#loader .hint{ font-size:11px; color:#5a7383; margin-top:12px; }
+
+/* -------------------------------------------------------- narrow screens */
+@media (max-width: 1100px){
+  :root{ --sb-w:280px; --dk-w:320px; }
+}
+@media (max-width: 860px){
+  /* too narrow for four columns: the dock floats over the view instead */
+  #app{ grid-template-columns: var(--rail-w) var(--sb-eff) 1fr 0; }
+  #dock{ position:absolute; right:0; top:0; bottom:0; width:320px; z-index:16; }
+  #app.dk-closed #dock{ display:none; }
+}
+
+/* --------------------------------------------------------- observations */
+.obs-coll{ border:1px solid rgba(255,255,255,.09); border-left:3px solid var(--c, #E69F00);
+  border-radius:var(--r); padding:7px 9px; margin:7px 0; background:rgba(0,0,0,.18); }
+.obs-coll.off{ opacity:.55; }
+.obs-head{ display:flex; align-items:center; gap:6px; }
+.obs-head .chk{ flex:1; min-width:0; font-size:11.5px; color:var(--text); font-weight:600; margin:0; }
+.obs-head .chk span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.obs-kind{ flex:none; font-size:9.5px; letter-spacing:.04em; text-transform:uppercase;
+  color:var(--c, #E69F00); border:1px solid currentColor; border-radius:9px; padding:0 6px; }
+.obs-sub{ font-size:10px; color:var(--muted); line-height:1.6; margin-top:3px; }
+.obs-sub.warn{ color:var(--accent2); }
+.obs-vars{ display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+.obs-var{ font-size:10px; line-height:1.5; padding:1px 7px; border-radius:9px;
+  border:1px solid rgba(255,255,255,.12); color:var(--dim); background:transparent; cursor:default; }
+.obs-var.match{ color:var(--text); border-color:rgba(95,212,255,.45); cursor:pointer; }
+.obs-var.match:hover{ background:rgba(95,212,255,.18); }
+.obs-var.alone{ cursor:pointer; border-style:dashed; }
+.obs-var.alone:hover{ background:rgba(255,255,255,.08); color:var(--text); }
+.obs-var.active{ background:var(--accent); color:#062331; border-color:var(--accent); }
+.obs-var .u{ color:var(--dim); }
+.obs-var.active .u{ color:#0d3a4d; }
+.obs-row{ display:flex; gap:6px; margin-top:6px; align-items:center; font-size:10.5px; color:var(--muted); }
+.obs-row select{ flex:1; padding:3px 6px; font-size:10.5px; }
+.obs-coll details{ margin-top:6px; font-size:10.5px; color:var(--muted); }
+.obs-coll summary{ cursor:pointer; color:var(--muted); }
+.obs-st{ display:flex; align-items:center; gap:6px; padding:2px 0; }
+.obs-st .nm{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.obs-st .nm .sub{ color:var(--dim); font-size:9.5px; }
+.obs-st button{ padding:0 6px; font-size:11px; flex:none; }
+.obs-cbar{ height:7px; border-radius:2px; margin-top:5px; }
+.obs-cbar-lab{ display:flex; justify-content:space-between; font-size:9.5px; color:var(--dim); }
+.obs-report{ font:10px/1.5 Consolas, "Cascadia Mono", monospace; color:var(--muted);
+  background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.08); border-radius:6px;
+  padding:7px 8px; margin-top:8px; white-space:pre-wrap; word-break:break-word; max-height:42vh; overflow:auto; }
+.obs-report.bad{ color:var(--danger); }
+#obs-legend:empty{ display:none; }
+#obs-legend{ margin-top:6px; padding-top:5px; border-top:1px solid rgba(255,255,255,.08); }
+#obs-legend .li .mk{ width:10px; height:10px; flex:none; border-radius:50%; box-sizing:border-box; }
+#obs-legend .li .mk.ring{ border:2px solid var(--c); }
+#obs-legend .li .mk.disc{ background:var(--c); border:1px solid rgba(0,0,0,.6); }
+#obs-legend .li .mk.cast{ background:var(--c); border-radius:1px; transform:rotate(45deg) scale(.8); }
+#readout .obs-tag{ font-size:10px; font-style:normal; }
+#tip .obs-h{ font-weight:700; }
+#tip .obs-k{ color:var(--accent2); font-size:10px; text-transform:uppercase; letter-spacing:.04em; }

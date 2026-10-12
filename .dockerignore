@@ -1,0 +1,22 @@
+.git/
+__pycache__/
+*.py[cod]
+
+*.nc
+
+# documentation media: shown on the repository page, not served by the app
+docs/
+
+# build and deployment files: not part of the app the image serves
+.dockerignore
+.gitattributes
+.gitignore
+.gitlab-ci.yml
+Dockerfile
+compose.yaml
+docker-compose.yml
+
+uploads/
+data/*
+!data/default/
+!data/default/**

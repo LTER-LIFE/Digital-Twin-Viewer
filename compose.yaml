@@ -1,0 +1,20 @@
+services:
+  digital-twin-viewer:
+    build:
+      context: .
+    ports:
+      # renamed from TIDAL_FLATS_PORT; set DTV_PORT to map a different host port
+      - "${DTV_PORT:-8501}:8501"
+    environment:
+      HOST: 0.0.0.0
+      PORT: 8501
+    volumes:
+      # kept under their old names on purpose — see docker-compose.yml for why
+      # and for the migration if you want to rename them
+      - tidal-flats-data:/app/data
+      - tidal-flats-uploads:/app/uploads
+    restart: unless-stopped
+
+volumes:
+  tidal-flats-data:
+  tidal-flats-uploads:

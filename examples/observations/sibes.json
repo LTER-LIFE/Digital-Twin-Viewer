@@ -1,0 +1,56 @@
+{
+  "format": "dtv-observations/1",
+  "id": "sibes",
+  "title": "SIBES — intertidal sediment and macrozoobenthos",
+  "description": "Synoptic Intertidal Benthic Survey of the Dutch Wadden Sea, 2008–2022: one core per station per summer, ~4 000 stations. Carbon per ERSEM-BFM feeding group from AFDM x species energy content / 45.8 kJ/g C, split over groups with MARINETRAITS fuzzy scores; built with tools/prepare_benthos.py. Feeding groups from SIBES_v4_feeding_groups_gC_m2.csv; cores not sorted for fauna have no biomass.",
+  "source": "NIOZ Royal Netherlands Institute for Sea Research (SIBES v4)",
+  "time_zone": "UTC",
+  "variables": {
+    "median_grain_size": {
+      "units": "um",
+      "long_name": "Median grain size",
+      "level": "bed"
+    },
+    "percentage_mud": {
+      "units": "%",
+      "long_name": "Mud fraction (< 63 um)",
+      "level": "bed"
+    },
+    "afdm_total": {
+      "units": "g AFDM/m2",
+      "long_name": "Macrozoobenthos biomass (AFDM)",
+      "quantity": "macrozoobenthos_biomass_afdm",
+      "level": "bed"
+    },
+    "epibenthos": {
+      "units": "g C/m2",
+      "long_name": "Epibenthos (Y1)",
+      "quantity": "epibenthos_carbon",
+      "level": "bed"
+    },
+    "deposit_feeders": {
+      "units": "g C/m2",
+      "long_name": "Deposit feeders (Y2)",
+      "quantity": "deposit_feeders_carbon",
+      "level": "bed"
+    },
+    "suspension_feeders": {
+      "units": "g C/m2",
+      "long_name": "Suspension feeders (Y3)",
+      "quantity": "suspension_feeders_carbon",
+      "level": "bed"
+    },
+    "endobenthos": {
+      "units": "g C/m2",
+      "long_name": "Endobenthos (Y5)",
+      "quantity": "endobenthos_carbon",
+      "level": "bed"
+    },
+    "total_carbon": {
+      "units": "g C/m2",
+      "long_name": "Macrozoobenthos carbon",
+      "quantity": "macrozoobenthos_carbon",
+      "level": "bed"
+    }
+  }
+}

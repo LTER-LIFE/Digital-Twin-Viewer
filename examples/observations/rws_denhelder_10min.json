@@ -1,0 +1,15 @@
+{
+  "format": "dtv-observations/1",
+  "id": "rws-den-helder",
+  "title": "RWS Den Helder tide gauge — 10-minute water level",
+  "description": "Measured water level, astronomical tide and surge at the Den Helder gauge, 10-minute values (TESO step 13).",
+  "source": "Rijkswaterstaat, via WaterWebservices DDAPI 2.0",
+  "time_zone": "UTC",
+  "stations": {"DENHDR": {"name": "Den Helder (tide gauge)", "lat": 52.9644, "lon": 4.7450}},
+  "flags": {"good": [0]},
+  "variables": {
+    "wl":       {"units": "m", "long_name": "Water level (measured)", "quantity": "water_level", "datum": "NAP"},
+    "wl_astro": {"units": "m", "long_name": "Astronomical tide", "datum": "NAP"},
+    "surge":    {"units": "m", "long_name": "Surge (measured - astronomical)"}
+  }
+}

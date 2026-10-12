@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Digital Twin Viewer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230a1620'/%3E%3Cpath d='M3 20c3-3 6-3 9 0s6 3 9 0 6-3 9 0' stroke='%235fd4ff' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3Cpath d='M3 26c3-3 6-3 9 0s6 3 9 0 6-3 9 0' stroke='%23ffc857' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3Cpath d='M6 13h20' stroke='%23d9c9a3' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="./css/app.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============================================================ rail -->
+  <nav id="rail" aria-label="Sections">
+    <button class="rail-btn" data-section="data" title="Dataset (1)">
+      <svg viewBox="0 0 20 20"><ellipse cx="10" cy="5" rx="7" ry="2.6"/><path d="M3 5v10c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6V5"/><path d="M3 10c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6"/></svg>
+    </button>
+    <button class="rail-btn" data-section="variables" title="Variables (2)">
+      <svg viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="14" rx="2"/><path d="M3 8h14M8 8v9"/></svg>
+    </button>
+    <button class="rail-btn" data-section="view" title="View (3)">
+      <svg viewBox="0 0 20 20"><path d="M10 3l7 4-7 4-7-4z"/><path d="M3 11l7 4 7-4"/></svg>
+    </button>
+    <button class="rail-btn" data-section="flow" title="Flow (4)">
+      <svg viewBox="0 0 20 20"><path d="M3 7c2.5-2.4 5-2.4 7 0s4.5 2.4 7 0"/><path d="M3 13c2.5-2.4 5-2.4 7 0s4.5 2.4 7 0"/></svg>
+    </button>
+    <button class="rail-btn" data-section="analysis" title="Analysis &amp; selections (5)">
+      <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="6.5"/><path d="M10 1.5v3M10 15.5v3M1.5 10h3M15.5 10h3"/><circle cx="10" cy="10" r="1.6" fill="currentColor" stroke="none"/></svg>
+    </button>
+    <button class="rail-btn" data-section="export" title="Export (6)">
+      <svg viewBox="0 0 20 20"><path d="M10 2.5v10"/><path d="M6 9l4 4 4-4"/><path d="M3 15v2.5h14V15"/></svg>
+    </button>
+    <button class="rail-btn" data-section="obs" title="Observations (7)">
+      <svg viewBox="0 0 20 20"><circle cx="6" cy="12.5" r="2.4"/><circle cx="14" cy="6.5" r="2.4"/><path d="M8 11l4-3"/><path d="M3 17.5h14"/></svg>
+    </button>
+    <div class="rail-gap"></div>
+    <button class="rail-btn" data-toggle="dock" title="Charts (Ctrl+J)">
+      <svg viewBox="0 0 20 20"><path d="M3 3v14h14"/><path d="M6 13l3.2-4.4 2.6 2.2L17 5"/></svg>
+    </button>
+    <button class="rail-btn" data-section="help" title="Help &amp; caveats">
+      <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7.5"/><path d="M7.7 7.6a2.4 2.4 0 1 1 2.9 2.6v1.3"/><circle cx="10.4" cy="14.4" r=".9" fill="currentColor" stroke="none"/></svg>
+    </button>
+  </nav>
+
+  <!-- ============================================================ sidebar -->
+  <aside id="sidebar" aria-label="Controls">
+    <header id="sb-head">
+      <span id="sb-title">Dataset</span>
+      <button id="sb-close" title="Collapse sidebar (Ctrl+B)">&#10005;</button>
+    </header>
+    <div id="sb-body">
+
+      <!-- ---------------------------------------------------- data -->
+      <section class="sb-sec" data-section="data">
+        <div id="ds-browser" hidden>
+          <button id="ds-toggle" class="wide"><span class="cur" id="ds-current">Datasets</span><span id="ds-caret">&#9662;</span></button>
+          <div id="ds-list"></div>
+        </div>
+        <button id="b-load" class="wide" style="margin-top:8px;">&#8853; Load .nc file&hellip;</button>
+        <input type="file" id="nc-file" accept=".nc" hidden>
+
+        <h3>Properties</h3>
+        <dl id="ds-props" class="props"></dl>
+
+        <h3>Sampling</h3>
+        <p class="note" id="alias-note"></p>
+
+        <h3>Memory</h3>
+        <p class="note" id="mem-note"></p>
+      </section>
+
+      <!-- ---------------------------------------------------- variables -->
+      <section class="sb-sec" data-section="variables">
+        <div id="var-list"></div>
+        <div id="var-detail" hidden>
+          <h3>Colour scale</h3>
+          <div class="row2">
+            <label>Min<input type="number" id="cs-min" step="any"></label>
+            <label>Max<input type="number" id="cs-max" step="any"></label>
+          </div>
+          <div class="btn-row">
+            <button id="cs-reset" class="sm">Default</button>
+            <button id="cs-full" class="sm">Full range</button>
+            <button id="cs-step" class="sm" title="Fit the colour scale to this timestep">This step</button>
+          </div>
+          <div class="ctl-row" style="margin-top:10px;"><span>Colormap</span></div>
+          <select id="cs-cmap"></select>
+          <label class="chk"><input type="checkbox" id="cs-log"> Logarithmic scale</label>
+          <label class="chk"><input type="checkbox" id="cs-rev"> Reverse colormap</label>
+          <p class="note" id="var-note"></p>
+        </div>
+      </section>
+
+      <!-- ---------------------------------------------------- view -->
+      <section class="sb-sec" data-section="view">
+        <div class="ctl-row"><span>Vertical exaggeration</span><output id="o-exag">200×</output></div>
+        <input type="range" id="r-exag" min="20" max="500" step="10" value="200">
+        <div class="ctl-row"><span>Water clarity</span><output id="o-clar">55%</output></div>
+        <input type="range" id="r-clar" min="10" max="100" step="1" value="55">
+        <div class="ctl-row"><span>Terrain brightness</span><output id="o-bright">150%</output></div>
+        <input type="range" id="r-bright" min="100" max="200" step="5" value="150">
+        <div class="btn-row">
+          <button id="b-mode">Analysis mode</button>
+          <button id="b-orbit">Orbit</button>
+          <button id="b-reset">Reset view</button>
+        </div>
+        <h3>Map overlays</h3>
+        <label class="chk"><input type="checkbox" id="ov-scale" checked> Scale bar &amp; exaggeration</label>
+        <label class="chk"><input type="checkbox" id="ov-compass" checked> Compass</label>
+        <label class="chk"><input type="checkbox" id="ov-legend" checked> Legend</label>
+        <label class="chk"><input type="checkbox" id="ov-colorbar" checked> Colour bar</label>
+        <label class="chk"><input type="checkbox" id="ov-status" checked> Status strip</label>
+        <label class="chk"><input type="checkbox" id="ov-obs" checked> Observation markers</label>
+      </section>
+
+      <!-- ---------------------------------------------------- flow -->
+      <section class="sb-sec" data-section="flow">
+        <div id="flow-body">
+          <button id="b-flow" class="wide">Current flow</button>
+          <div class="ctl-row"><span>Trail density</span><output id="o-fdens">14000</output></div>
+          <input type="range" id="r-fdens" min="1000" max="40000" step="500" value="14000">
+          <div class="ctl-row"><span>Trail speed</span><output id="o-fspd">1.0 h/s</output></div>
+          <input type="range" id="r-fspd" min="1" max="60" step="1" value="10">
+          <p class="note" id="flow-note"></p>
+        </div>
+        <p class="note" id="flow-absent" hidden>This dataset has no velocity pair, so there is no flow field to animate.</p>
+      </section>
+
+      <!-- ---------------------------------------------------- analysis -->
+      <section class="sb-sec" data-section="analysis">
+        <div class="ctl-row"><span>Selection tool</span></div>
+        <div class="btn-row seg">
+          <button id="t-point" data-tool="point">Point</button>
+          <button id="t-transect" data-tool="transect">Transect</button>
+          <button id="t-area" data-tool="area">Area</button>
+        </div>
+        <p class="note" id="tool-hint">Choose a tool, then click the map.</p>
+
+        <div class="ctl-row" style="margin-top:12px;"><span>Point by coordinates</span></div>
+        <select id="pt-mode" aria-label="Coordinate kind">
+          <option value="ll">Latitude / longitude</option>
+          <option value="ij">Grid row / column</option>
+        </select>
+        <div class="row2" style="margin-top:5px;">
+          <label id="pt-la">Latitude<input type="text" id="pt-a" inputmode="decimal" autocomplete="off" spellcheck="false"></label>
+          <label id="pt-lb">Longitude<input type="text" id="pt-b" inputmode="decimal" autocomplete="off" spellcheck="false"></label>
+        </div>
+        <div class="row2" style="margin-top:5px; align-items:flex-end;">
+          <label>Name (optional)<input type="text" id="pt-name" maxlength="60" autocomplete="off" placeholder="e.g. NIOZ jetty"></label>
+          <button id="pt-add" class="sm" style="flex:none;">Add point</button>
+        </div>
+        <p class="note" id="pt-msg"></p>
+
+        <div id="stat-wrap" hidden>
+          <div class="ctl-row" style="margin-top:6px;"><span>Area statistic</span></div>
+          <select id="area-stat">
+            <option value="mean">Mean</option>
+            <option value="median">Median</option>
+            <option value="min">Minimum</option>
+            <option value="max">Maximum</option>
+            <option value="std">Standard deviation</option>
+          </select>
+          <label class="chk"><input type="checkbox" id="area-band" checked> Show 10–90 % band</label>
+        </div>
+
+        <h3>Selections</h3>
+        <div id="sel-list"><p class="note">No selections yet.</p></div>
+        <p class="note">Double-click a name, or use &#9998;, to rename a selection.</p>
+        <div class="btn-row"><button id="sel-clear" class="sm">Clear all</button></div>
+
+        <h3>Extra series</h3>
+        <label class="chk"><input type="checkbox" id="ser-level"> Water level</label>
+        <label class="chk"><input type="checkbox" id="ser-depth"> Water depth</label>
+        <label class="chk"><input type="checkbox" id="ser-domain"> Domain exposed-flat area</label>
+      </section>
+
+      <!-- ---------------------------------------------------- export -->
+      <section class="sb-sec" data-section="export">
+        <h3>Figure</h3>
+        <div class="ctl-row"><span>Resolution</span></div>
+        <select id="fig-scale">
+          <option value="1">1× (screen)</option>
+          <option value="2" selected>2×</option>
+          <option value="3">3×</option>
+          <option value="4">4×</option>
+        </select>
+        <label class="chk"><input type="checkbox" id="fig-caption" checked> Caption bar</label>
+        <button id="b-fig" class="wide" style="margin-top:8px;">Save view as PNG</button>
+        <button id="b-chartpng" class="wide" style="margin-top:6px;">Save chart as PNG</button>
+
+        <h3>Data</h3>
+        <button id="b-csv" class="wide">Export series as CSV</button>
+        <button id="b-vcsv" class="wide" style="margin-top:6px;" disabled>Export profiles as CSV</button>
+        <button id="b-json" class="wide" style="margin-top:6px;">Export selections as JSON</button>
+        <button id="b-pcsv" class="wide" style="margin-top:6px;" disabled>Export model–observation pairs as CSV</button>
+        <p class="note">CSV carries a comment header with dataset, grid, datum, layer and the
+          sampling caveat, so a file stays interpretable away from this app.</p>
+
+        <h3>Share</h3>
+        <button id="b-link" class="wide">Copy link to this view</button>
+        <p class="note">The link restores dataset, variable, timestep, colour scale, exaggeration,
+          camera and selections.</p>
+      </section>
+
+      <!-- ---------------------------------------------------- observations -->
+      <section class="sb-sec" data-section="obs">
+        <p class="note" id="obs-summary" style="margin-top:2px;"></p>
+        <button id="b-obs-load" class="wide" style="margin-top:8px;">&#8853; Load observations&hellip;</button>
+        <input type="file" id="obs-file" accept=".csv,.tsv,.txt,.gz,.json,.nc" multiple hidden>
+        <p class="note">A CSV with its JSON sidecar, or a CF-1.8 NetCDF — see
+          <a href="./OBSERVATIONS.md" target="_blank" rel="noopener">OBSERVATIONS.md</a>.</p>
+        <pre id="obs-report" class="obs-report" hidden></pre>
+        <div id="obs-list"></div>
+
+        <h3>Comparison</h3>
+        <label class="chk"><input type="checkbox" id="ser-obs" checked> Observations in charts</label>
+        <p class="note" id="obs-how"></p>
+      </section>
+
+      <!-- ---------------------------------------------------- help -->
+      <section class="sb-sec" data-section="help">
+        <h3>Keyboard</h3>
+        <dl class="props keys">
+          <dt><kbd>Space</kbd></dt><dd>play / pause</dd>
+          <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>step one timestep</dd>
+          <dt><kbd>M</kbd></dt><dd>realistic ⇄ analysis</dd>
+          <dt><kbd>F</kbd></dt><dd>flow on / off</dd>
+          <dt><kbd>R</kbd></dt><dd>reset camera</dd>
+          <dt><kbd>Esc</kbd></dt><dd>cancel the current selection</dd>
+          <dt><kbd>Enter</kbd></dt><dd>finish a transect / area</dd>
+          <dt><kbd>Ctrl</kbd>+<kbd>B</kbd></dt><dd>sidebar</dd>
+          <dt><kbd>Ctrl</kbd>+<kbd>J</kbd></dt><dd>chart dock</dd>
+          <dt><kbd>1</kbd>…<kbd>7</kbd></dt><dd>jump to a sidebar section</dd>
+        </dl>
+        <h3>Mouse</h3>
+        <p class="note">Drag to rotate · scroll to zoom · right-drag to pan · hover the map for a
+          cell readout · click to place a selection when a tool is active.</p>
+        <p class="note">On the charts, hover for values at that point and drag along the time
+          axis to scrub the run — horizontal on the timeseries, vertical on the Hovmöller.</p>
+        <h3>Reading these numbers</h3>
+        <div class="note" id="caveats"></div>
+      </section>
+
+    </div>
+    <div id="sb-resize" class="resizer" title="Drag to resize"></div>
+  </aside>
+
+  <!-- ============================================================ view -->
+  <main id="view">
+    <div id="canvas-wrap"></div>
+
+    <div id="statusbar">
+      <div class="st-left">
+        <span id="st-title">Wadden Sea</span>
+        <span class="st-sub" id="st-sub"></span>
+      </div>
+      <div class="st-mid">
+        <span id="st-date">1 January 2015</span>
+        <span class="st-sub" id="st-step">Step 1 / 366</span>
+        <input type="date" id="st-jump" title="Jump to a date">
+      </div>
+      <div class="st-right">
+        <span class="chip" id="season-chip">Winter</span>
+        <span class="chip alt" id="tide-chip">Tide —</span>
+      </div>
+    </div>
+
+    <div id="compass" title="True north">
+      <svg id="needle" viewBox="-12 -12 24 24" aria-hidden="true">
+        <path d="M0 -10 L4.6 6.2 L0 2.4 L-4.6 6.2 Z"/>
+      </svg>
+      <span>N</span>
+    </div>
+
+    <div id="scalebar">
+      <div class="sb-line"><span id="sb-bar"></span><span id="sb-len">— km</span></div>
+      <div class="sb-ve" id="sb-ve">V.E. 200×</div>
+    </div>
+
+    <div id="maplegend">
+      <div class="lg-head">Legend</div>
+      <div id="legend-items"></div>
+      <div id="obs-legend"></div>
+    </div>
+
+    <div id="colorbar" hidden>
+      <div class="lg-head" id="cb-title">Variable</div>
+      <div id="cb-bar"><span class="cap lo" id="cb-cap-lo"></span><span class="cap hi" id="cb-cap-hi"></span></div>
+      <div id="cb-scale"><span id="cb-lo">—</span><span id="cb-mid"></span><span id="cb-hi">—</span></div>
+    </div>
+
+    <div id="timeline">
+      <button id="play" title="Play / pause">▶</button>
+      <span id="tl-date">01 Jan</span>
+      <input type="range" id="day-slider" min="0" max="365" step="0.01" value="0">
+      <button class="spd" data-spd="1">1×</button>
+      <button class="spd on" data-spd="3">3×</button>
+      <button class="spd" data-spd="10">10×</button>
+      <button class="spd" data-spd="30">30×</button>
+    </div>
+
+    <div id="attrib" hidden></div>
+    <div id="tip"></div>
+  </main>
+
+  <!-- ============================================================ dock -->
+  <aside id="dock" aria-label="Charts">
+    <div id="dk-resize" class="resizer" title="Drag to resize"></div>
+    <header id="dk-head">
+      <div class="tabs">
+        <button class="tab on" data-tab="series">Timeseries</button>
+        <button class="tab" data-tab="profile" disabled>Profile</button>
+        <button class="tab" data-tab="vert" disabled>Vertical</button>
+        <button class="tab" data-tab="hov" disabled>Hovmöller</button>
+        <button class="tab" data-tab="valid" disabled title="Model against observation, pair by pair">Model vs obs</button>
+      </div>
+      <button id="dk-close" title="Collapse dock (Ctrl+J)">&#10005;</button>
+    </header>
+    <div id="dk-body">
+      <div class="chart-wrap" data-tab="series">
+        <canvas id="c-series"></canvas>
+        <!-- water level / depth keep their own panel: metres cannot share an
+             axis with mg/m3 without one of the two scales being a lie -->
+        <canvas id="c-series2" hidden></canvas>
+        <!-- an observed variable with no model counterpart in this run: on its
+             own axis, never on the model's -->
+        <canvas id="c-series3" hidden></canvas>
+      </div>
+      <div class="chart-wrap" data-tab="profile" hidden><canvas id="c-profile"></canvas></div>
+      <div class="chart-wrap" data-tab="vert" hidden>
+        <div class="vert-bar">
+          <label class="chk"><input type="checkbox" id="vt-band" checked> 10–90 % band</label>
+          <label class="chk"><input type="checkbox" id="vt-env"> Whole-run envelope</label>
+          <label class="chk" id="vt-obs-wrap" hidden><input type="checkbox" id="vt-obs" checked> Observations</label>
+        </div>
+        <canvas id="c-vert"></canvas>
+      </div>
+      <div class="chart-wrap" data-tab="hov" hidden><canvas id="c-hov"></canvas></div>
+      <div class="chart-wrap" data-tab="valid" hidden><canvas id="c-valid"></canvas></div>
+      <div id="dk-caption"></div>
+      <div id="readout"></div>
+    </div>
+  </aside>
+
+</div>
+
+<div id="loader">
+  <h1 id="loader-title">Digital Twin Viewer</h1>
+  <p id="loader-msg">Loading dataset&hellip;</p>
+  <div id="bar-wrap"><div id="bar"></div></div>
+  <p id="load-pct"></p>
+  <p class="hint" id="loader-hint">GETM model output</p>
+</div>
+
+<script type="importmap">
+{ "imports": {
+    "three": "./lib/three.module.js",
+    "three/addons/controls/OrbitControls.js": "./lib/OrbitControls.js"
+} }
+</script>
+<script type="module" src="./js/app.js"></script>
+</body>
+</html>
